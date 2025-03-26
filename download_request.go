@@ -10,4 +10,5 @@ type DownloadQueueRequest struct {
 
 	CreatedAt int64 `json:"created_at" bson:"created_at"`
 	UpdatedAt int64 `json:"updated_at" bson:"updated_at"`
+	SyncCount int   `json:"sync_count" bson:"sync_count"`
 }
