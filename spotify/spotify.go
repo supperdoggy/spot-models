@@ -19,6 +19,8 @@ type SpotifyService interface {
 }
 
 type spotifyService struct {
+	ClientID      string
+	ClientSecret  string
 	spotifyClient *spotify.Client
 	log           *zap.Logger
 }
@@ -44,7 +46,27 @@ func NewSpotifyService(ctx context.Context, clientID, clientSecret string, log *
 	}
 }
 
+func (s *spotifyService) refreshToken(ctx context.Context) error {
+	spotifyConfig := clientcredentials.Config{
+		ClientID:     s.ClientID,
+		ClientSecret: s.ClientSecret,
+		TokenURL:     spotifyauth.TokenURL,
+	}
+
+	token, err := spotifyConfig.Token(ctx)
+	if err != nil {
+		s.log.Error("failed to refresh token", zap.Error(err))
+		return err
+	}
+
+	httpClient := spotifyauth.New().Client(context.Background(), token)
+	s.spotifyClient = spotify.New(httpClient)
+
+	return nil
+}
+
 func (s *spotifyService) GetObjectName(ctx context.Context, url string) (string, error) {
+	s.refreshToken(ctx)
 
 	if !s.isValidSpotifyURL(url) {
 		s.log.Error("invalid spotify url", zap.String("url", url))
@@ -120,6 +142,8 @@ func (s *spotifyService) getSpotifyID(url string) spotify.ID {
 }
 
 func (s *spotifyService) GetPlaylistTracks(ctx context.Context, url string) ([]spotify.PlaylistItem, error) {
+	s.refreshToken(ctx)
+
 	if !s.isValidSpotifyURL(url) {
 		return nil, errors.New("invalid spotify url")
 	}
