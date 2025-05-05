@@ -47,16 +47,19 @@ func NewSpotifyService(ctx context.Context, clientID, clientSecret string, log *
 func (s *spotifyService) GetObjectName(ctx context.Context, url string) (string, error) {
 
 	if !s.isValidSpotifyURL(url) {
+		s.log.Error("invalid spotify url", zap.String("url", url))
 		return "", errors.New("invalid spotify url")
 	}
 
 	objectType, err := s.GetObjectType(ctx, url)
 	if err != nil {
+		s.log.Error("failed to get object type", zap.Error(err))
 		return "", err
 	}
 
 	id := s.getSpotifyID(url)
 	if id == "" {
+		s.log.Error("failed to get spotify id", zap.String("url", url))
 		return "", errors.New("invalid spotify url")
 	}
 
@@ -65,18 +68,21 @@ func (s *spotifyService) GetObjectName(ctx context.Context, url string) (string,
 	case SpotifyObjectTypePlaylist:
 		playlist, err := s.spotifyClient.GetPlaylist(ctx, id)
 		if err != nil {
+			s.log.Error("failed to get playlist", zap.Error(err), zap.String("id", string(id)))
 			return "", err
 		}
 		name = playlist.Name
 	case SpotifyObjectTypeAlbum:
 		album, err := s.spotifyClient.GetAlbum(ctx, id)
 		if err != nil {
+			s.log.Error("failed to get album", zap.Error(err), zap.String("id", string(id)))
 			return "", err
 		}
 		name = album.Name
 	case SpotifyObjectTypeTrack:
 		track, err := s.spotifyClient.GetTrack(ctx, id)
 		if err != nil {
+			s.log.Error("failed to get track", zap.Error(err), zap.String("id", string(id)))
 			return "", err
 		}
 		name = track.Name
