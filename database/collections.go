@@ -13,7 +13,7 @@ func (d *db) downloadQueueRequestCollection() *mongo.Collection {
 		d.log.Error("failed to ping database. reconnecting.", zap.Error(err))
 		d.reconnectToDB()
 	}
-	return d.conn.Database(d.dbname).Collection(d.downloadRequestCollectionName)
+	return d.conn.Database(d.cfg.DatabaseName).Collection(d.cfg.DownloadRequestCollectionName)
 }
 
 func (d *db) playlistsCollection() *mongo.Collection {
@@ -22,7 +22,7 @@ func (d *db) playlistsCollection() *mongo.Collection {
 		d.reconnectToDB()
 	}
 
-	return d.conn.Database(d.dbname).Collection(d.playlistRequestCollectionName)
+	return d.conn.Database(d.cfg.DatabaseName).Collection(d.cfg.PlaylistRequestCollectionName)
 }
 
 func (d *db) indexStatusCollection() *mongo.Collection {
@@ -31,7 +31,7 @@ func (d *db) indexStatusCollection() *mongo.Collection {
 		d.reconnectToDB()
 	}
 
-	return d.conn.Database(d.dbname).Collection(d.indexStatusCollectionName)
+	return d.conn.Database(d.cfg.DatabaseName).Collection(d.cfg.IndexStatusCollectionName)
 }
 
 // musicFilesCollection returns the music files collection
@@ -41,5 +41,5 @@ func (d *db) musicFilesCollection() *mongo.Collection {
 		d.reconnectToDB()
 	}
 
-	return d.conn.Database(d.dbname).Collection(d.musicFilesCollectionName)
+	return d.conn.Database(d.cfg.DatabaseName).Collection(d.cfg.MusicFilesCollectionName)
 }

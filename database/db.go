@@ -31,52 +31,27 @@ type db struct {
 	conn *mongo.Client
 	log  *zap.Logger
 
-	url    string
-	dbname string
-
-	// collections
-	musicFilesCollectionName      string
-	downloadRequestCollectionName string
-	playlistRequestCollectionName string
-	indexStatusCollectionName     string
+	cfg *DataBaseConfig
 }
 
-func NewDatabase(ctx context.Context, log *zap.Logger, url, dbname,
-	musicFilesCollection, downloadRequestCollection, indexStatusCollection, playlistRequestCollection string,
-) (Database, error) {
-	conn, err := mongo.Connect(context.Background(), options.Client().ApplyURI(url))
+func NewDatabase(ctx context.Context, log *zap.Logger, cfg *DataBaseConfig) (Database, error) {
+	conn, err := mongo.Connect(context.Background(), options.Client().ApplyURI(cfg.DatabaseURL))
 	if err != nil {
 		return nil, err
-	}
-
-	if musicFilesCollection == "" || downloadRequestCollection == "" ||
-		indexStatusCollection == "" || playlistRequestCollection == "" {
-		return nil, ErrEmptyCollectionName
-	}
-
-	if dbname == "" {
-		return nil, ErrEmptyDBName
 	}
 
 	return &db{
 		conn: conn,
 		log:  log,
 
-		url:    url,
-		dbname: dbname,
-
-		// collections
-		musicFilesCollectionName:      musicFilesCollection,
-		downloadRequestCollectionName: downloadRequestCollection,
-		playlistRequestCollectionName: playlistRequestCollection,
-		indexStatusCollectionName:     indexStatusCollection,
+		cfg: cfg,
 	}, nil
 }
 
 func (d *db) reconnectToDB() error {
 	d.conn.Disconnect(context.Background())
 
-	conn, err := mongo.Connect(context.Background(), options.Client().ApplyURI(d.url))
+	conn, err := mongo.Connect(context.Background(), options.Client().ApplyURI(d.cfg.DatabaseURL))
 	if err != nil {
 		return err
 	}
