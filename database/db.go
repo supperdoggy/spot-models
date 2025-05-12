@@ -42,11 +42,20 @@ type db struct {
 }
 
 func NewDatabase(ctx context.Context, log *zap.Logger, url, dbname,
-	musicFilesCollection, downloadRequestCollection, songsCollection, indexStatusCollection, playlistRequestCollection string,
+	musicFilesCollection, downloadRequestCollection, indexStatusCollection, playlistRequestCollection string,
 ) (Database, error) {
 	conn, err := mongo.Connect(context.Background(), options.Client().ApplyURI(url))
 	if err != nil {
 		return nil, err
+	}
+
+	if musicFilesCollection == "" || downloadRequestCollection == "" ||
+		indexStatusCollection == "" || playlistRequestCollection == "" {
+		return nil, ErrEmptyCollectionName
+	}
+
+	if dbname == "" {
+		return nil, ErrEmptyDBName
 	}
 
 	return &db{
