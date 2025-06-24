@@ -23,6 +23,8 @@ type PlaylistRequest struct {
 	Active     bool `json:"active" bson:"active"`
 	Errored    bool `json:"errored" bson:"errored"`
 	RetryCount int  `json:"retry_count" bson:"retry_count"`
+	// NoPull indicates that the playlist missing songs should not be pulled from Spotify
+	NoPull bool `json:"no_pull" bson:"no_pull"`
 
 	CreatedAt int64 `json:"created_at" bson:"created_at"`
 	UpdatedAt int64 `json:"updated_at" bson:"updated_at"`
