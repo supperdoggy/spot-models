@@ -11,7 +11,9 @@ import (
 func (d *db) downloadQueueRequestCollection() *mongo.Collection {
 	if err := d.conn.Ping(context.Background(), nil); err != nil {
 		d.log.Error("failed to ping database. reconnecting.", zap.Error(err))
-		d.reconnectToDB()
+		if reconnectErr := d.reconnectToDB(); reconnectErr != nil {
+			d.log.Error("failed to reconnect to database", zap.Error(reconnectErr))
+		}
 	}
 	return d.conn.Database(d.cfg.DatabaseName).Collection(d.cfg.DownloadRequestCollectionName)
 }
@@ -19,7 +21,9 @@ func (d *db) downloadQueueRequestCollection() *mongo.Collection {
 func (d *db) playlistsCollection() *mongo.Collection {
 	if err := d.conn.Ping(context.Background(), nil); err != nil {
 		d.log.Error("failed to ping database. reconnecting.", zap.Error(err))
-		d.reconnectToDB()
+		if reconnectErr := d.reconnectToDB(); reconnectErr != nil {
+			d.log.Error("failed to reconnect to database", zap.Error(reconnectErr))
+		}
 	}
 
 	return d.conn.Database(d.cfg.DatabaseName).Collection(d.cfg.PlaylistRequestCollectionName)
@@ -28,7 +32,9 @@ func (d *db) playlistsCollection() *mongo.Collection {
 func (d *db) indexStatusCollection() *mongo.Collection {
 	if err := d.conn.Ping(context.Background(), nil); err != nil {
 		d.log.Error("failed to ping database. reconnecting.", zap.Error(err))
-		d.reconnectToDB()
+		if reconnectErr := d.reconnectToDB(); reconnectErr != nil {
+			d.log.Error("failed to reconnect to database", zap.Error(reconnectErr))
+		}
 	}
 
 	return d.conn.Database(d.cfg.DatabaseName).Collection(d.cfg.IndexStatusCollectionName)
@@ -38,7 +44,9 @@ func (d *db) indexStatusCollection() *mongo.Collection {
 func (d *db) musicFilesCollection() *mongo.Collection {
 	if err := d.conn.Ping(context.Background(), nil); err != nil {
 		d.log.Error("failed to ping database. reconnecting.", zap.Error(err))
-		d.reconnectToDB()
+		if reconnectErr := d.reconnectToDB(); reconnectErr != nil {
+			d.log.Error("failed to reconnect to database", zap.Error(reconnectErr))
+		}
 	}
 
 	return d.conn.Database(d.cfg.DatabaseName).Collection(d.cfg.MusicFilesCollectionName)

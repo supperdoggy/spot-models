@@ -49,7 +49,9 @@ func NewDatabase(ctx context.Context, log *zap.Logger, cfg *DataBaseConfig) (Dat
 }
 
 func (d *db) reconnectToDB() error {
-	d.conn.Disconnect(context.Background())
+	if err := d.conn.Disconnect(context.Background()); err != nil {
+		d.log.Warn("error disconnecting from database", zap.Error(err))
+	}
 
 	conn, err := mongo.Connect(context.Background(), options.Client().ApplyURI(d.cfg.DatabaseURL))
 	if err != nil {
