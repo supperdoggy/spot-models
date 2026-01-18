@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/DigitalIndependence/models"
+	"github.com/supperdoggy/spot-models"
 	"github.com/gofrs/uuid"
 	"go.mongodb.org/mongo-driver/mongo"
 	"gopkg.in/mgo.v2/bson"

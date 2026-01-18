@@ -1,4 +1,4 @@
-module github.com/DigitalIndependence/models
+module github.com/supperdoggy/spot-models
 
 go 1.23.0
 
