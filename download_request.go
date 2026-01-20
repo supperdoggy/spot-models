@@ -1,5 +1,7 @@
 package models
 
+import "github.com/supperdoggy/spot-models/spotify"
+
 type DownloadQueueRequest struct {
 	ID        string `json:"id" bson:"_id"`
 	CreatorID int64  `json:"creator_id" bson:"creator_id"`
@@ -13,6 +15,11 @@ type DownloadQueueRequest struct {
 	UpdatedAt  int64 `json:"updated_at" bson:"updated_at"`
 	SyncCount  int   `json:"sync_count" bson:"sync_count"`
 	RetryCount int   `json:"retry_count" bson:"retry_count"`
+
+	// Track tracking fields
+	ExpectedTrackCount int                      `json:"expected_track_count" bson:"expected_track_count"`
+	FoundTrackCount    int                      `json:"found_track_count" bson:"found_track_count"`
+	TrackMetadata      []spotify.TrackMetadata  `json:"track_metadata" bson:"track_metadata"`
 }
 
 type PlaylistRequest struct {

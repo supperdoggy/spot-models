@@ -12,10 +12,16 @@ import (
 	"golang.org/x/oauth2/clientcredentials"
 )
 
+type TrackMetadata struct {
+	Artist string `json:"artist"`
+	Title  string `json:"title"`
+}
+
 type SpotifyService interface {
 	GetObjectName(ctx context.Context, url string) (string, error)
 	GetObjectType(ctx context.Context, url string) (SpotifyObjectType, error)
 	GetPlaylistTracks(ctx context.Context, url string) ([]spotify.PlaylistItem, error)
+	GetTrackCount(ctx context.Context, url string) (int, []TrackMetadata, error)
 }
 
 type spotifyService struct {
@@ -154,4 +160,100 @@ func (s *spotifyService) GetPlaylistTracks(ctx context.Context, url string) ([]s
 	}
 
 	return playlistItems, nil
+}
+
+// GetTrackCount returns the total track count and metadata for a Spotify URL (album, playlist, or track)
+func (s *spotifyService) GetTrackCount(ctx context.Context, url string) (int, []TrackMetadata, error) {
+	if !s.isValidSpotifyURL(url) {
+		return 0, nil, errors.New("invalid spotify url")
+	}
+
+	objectType, err := s.GetObjectType(ctx, url)
+	if err != nil {
+		return 0, nil, err
+	}
+
+	id := s.getSpotifyID(url)
+	if id == "" {
+		return 0, nil, errors.New("failed to get spotify id")
+	}
+
+	var count int
+	var tracks []TrackMetadata
+
+	switch objectType {
+	case SpotifyObjectTypePlaylist:
+		playlistItems, err := s.GetPlaylistTracks(ctx, url)
+		if err != nil {
+			return 0, nil, fmt.Errorf("failed to get playlist tracks: %w", err)
+		}
+		count = len(playlistItems)
+		for _, item := range playlistItems {
+			if item.Track.Track == nil {
+				continue
+			}
+			artists := []string{}
+			for _, artist := range item.Track.Track.Artists {
+				artists = append(artists, strings.ToLower(artist.Name))
+			}
+			tracks = append(tracks, TrackMetadata{
+				Artist: strings.Join(artists, ", "),
+				Title:  strings.ToLower(item.Track.Track.Name),
+			})
+		}
+
+	case SpotifyObjectTypeAlbum:
+		album, err := s.spotifyClient.GetAlbum(ctx, id)
+		if err != nil {
+			return 0, nil, fmt.Errorf("failed to get album: %w", err)
+		}
+		count = int(album.Tracks.Total)
+
+		// Get all album tracks (handle pagination)
+		var allTracks []spotify.SimpleTrack
+		offset := 0
+		limit := 50
+		for {
+			albumTracks, err := s.spotifyClient.GetAlbumTracks(ctx, id, spotify.Limit(limit), spotify.Offset(offset))
+			if err != nil {
+				return 0, nil, fmt.Errorf("failed to get album tracks: %w", err)
+			}
+			allTracks = append(allTracks, albumTracks.Tracks...)
+			if len(albumTracks.Tracks) < limit {
+				break
+			}
+			offset += limit
+		}
+
+		for _, track := range allTracks {
+			artists := []string{}
+			for _, artist := range track.Artists {
+				artists = append(artists, strings.ToLower(artist.Name))
+			}
+			tracks = append(tracks, TrackMetadata{
+				Artist: strings.Join(artists, ", "),
+				Title:  strings.ToLower(track.Name),
+			})
+		}
+
+	case SpotifyObjectTypeTrack:
+		track, err := s.spotifyClient.GetTrack(ctx, id)
+		if err != nil {
+			return 0, nil, fmt.Errorf("failed to get track: %w", err)
+		}
+		count = 1
+		artists := []string{}
+		for _, artist := range track.Artists {
+			artists = append(artists, strings.ToLower(artist.Name))
+		}
+		tracks = append(tracks, TrackMetadata{
+			Artist: strings.Join(artists, ", "),
+			Title:  strings.ToLower(track.Name),
+		})
+
+	default:
+		return 0, nil, fmt.Errorf("unsupported object type: %s", objectType)
+	}
+
+	return count, tracks, nil
 }
