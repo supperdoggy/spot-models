@@ -38,12 +38,8 @@ func NewSpotifyService(ctx context.Context, clientID, clientSecret string, log *
 		TokenURL:     spotifyauth.TokenURL,
 	}
 
-	token, err := spotifyConfig.Token(ctx)
-	if err != nil {
-		log.Fatal("failed to get token", zap.Error(err))
-	}
-
-	httpClient := spotifyauth.New().Client(context.Background(), token)
+	// Use Client() instead of Token() - this automatically refreshes expired tokens
+	httpClient := spotifyConfig.Client(ctx)
 	spotifyClient := spotify.New(httpClient)
 
 	return &spotifyService{
