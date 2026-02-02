@@ -13,9 +13,15 @@ import (
 )
 
 type TrackMetadata struct {
-	Artist string `json:"artist"`
-	Title  string `json:"title"`
+	SpotifyURL     string `json:"spotify_url" bson:"spotify_url"`
+	Artist         string `json:"artist" bson:"artist"`
+	Title          string `json:"title" bson:"title"`
+	Found          bool   `json:"found" bson:"found"`
+	FailedAttempts int    `json:"failed_attempts" bson:"failed_attempts"`
+	Skipped        bool   `json:"skipped" bson:"skipped"` // marked as stuck after MaxFailedAttempts
 }
+
+const MaxFailedAttempts = 3 // after this many failed attempts, track is marked as skipped
 
 type SpotifyService interface {
 	GetObjectName(ctx context.Context, url string) (string, error)
@@ -38,12 +44,8 @@ func NewSpotifyService(ctx context.Context, clientID, clientSecret string, log *
 		TokenURL:     spotifyauth.TokenURL,
 	}
 
-	token, err := spotifyConfig.Token(ctx)
-	if err != nil {
-		log.Fatal("failed to get token", zap.Error(err))
-	}
-
-	httpClient := spotifyauth.New().Client(context.Background(), token)
+	// Use Client() instead of Token() - this automatically refreshes expired tokens
+	httpClient := spotifyConfig.Client(ctx)
 	spotifyClient := spotify.New(httpClient)
 
 	return &spotifyService{
@@ -127,6 +129,11 @@ func (s *spotifyService) getSpotifyID(url string) spotify.ID {
 	return spotify.ID(id)
 }
 
+// getTrackURL converts a Spotify track ID to a full URL
+func (s *spotifyService) getTrackURL(trackID spotify.ID) string {
+	return fmt.Sprintf("https://open.spotify.com/track/%s", string(trackID))
+}
+
 func (s *spotifyService) GetPlaylistTracks(ctx context.Context, url string) ([]spotify.PlaylistItem, error) {
 
 	if !s.isValidSpotifyURL(url) {
@@ -197,8 +204,9 @@ func (s *spotifyService) GetTrackCount(ctx context.Context, url string) (int, []
 				artists = append(artists, strings.ToLower(artist.Name))
 			}
 			tracks = append(tracks, TrackMetadata{
-				Artist: strings.Join(artists, ", "),
-				Title:  strings.ToLower(item.Track.Track.Name),
+				SpotifyURL: s.getTrackURL(item.Track.Track.ID),
+				Artist:     strings.Join(artists, ", "),
+				Title:      strings.ToLower(item.Track.Track.Name),
 			})
 		}
 
@@ -231,8 +239,9 @@ func (s *spotifyService) GetTrackCount(ctx context.Context, url string) (int, []
 				artists = append(artists, strings.ToLower(artist.Name))
 			}
 			tracks = append(tracks, TrackMetadata{
-				Artist: strings.Join(artists, ", "),
-				Title:  strings.ToLower(track.Name),
+				SpotifyURL: s.getTrackURL(track.ID),
+				Artist:     strings.Join(artists, ", "),
+				Title:      strings.ToLower(track.Name),
 			})
 		}
 
@@ -247,8 +256,9 @@ func (s *spotifyService) GetTrackCount(ctx context.Context, url string) (int, []
 			artists = append(artists, strings.ToLower(artist.Name))
 		}
 		tracks = append(tracks, TrackMetadata{
-			Artist: strings.Join(artists, ", "),
-			Title:  strings.ToLower(track.Name),
+			SpotifyURL: s.getTrackURL(track.ID),
+			Artist:     strings.Join(artists, ", "),
+			Title:      strings.ToLower(track.Name),
 		})
 
 	default:
